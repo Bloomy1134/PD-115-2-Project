@@ -36,16 +36,29 @@
 將這個因素討論進去以後，開始實作程式碼。我透過輸入自行設計的可解地圖 (先測試是否演算法導出的答案真的可以完全消除地圖上格子)，以及AI幫我生成的完全隨機地圖 (測試演算法是否能正確推論一個地圖是否不可解)進行測試，獲得以下結果與時間紀錄:
 
 **1. 一個保證有解(我先行設計)；且每種顏色皆為偶數格的地圖 (50格)**
+
+<img width="1008" height="167" alt="螢幕擷取畫面 2026-05-31 161910" src="https://github.com/user-attachments/assets/b7e58d93-d545-453b-8641-744b9c8a73b6" />
+
+
 **(左: DFS 版本，時間花費1秒以內 右: A-star 版本，時間花費一秒以內)**
+
+
 <img width="326" height="615" alt="螢幕擷取畫面 2026-05-31 041708" src="https://github.com/user-attachments/assets/11032995-8d8a-4c60-b3ed-257f34ce2965" />
 
 <img width="301" height="594" alt="image" src="https://github.com/user-attachments/assets/967bab18-278c-4c96-9358-f58003803acc" />
 
 **2. 一個保證有解(我先行設計)；且具有三消格式的地圖 (50格)**
+
+<img width="1011" height="166" alt="螢幕擷取畫面 2026-05-31 161940" src="https://github.com/user-attachments/assets/22c26242-f258-4dc7-bde6-20b541051238" />
+
+
 **(左: DFS 版本，時間花費3分鐘左右 右: A-star 版本，花費時間五秒左右)**
- <img width="335" height="589" alt="螢幕擷取畫面 2026-05-31 042941" src="https://github.com/user-attachments/assets/190242f3-be23-4f0a-bf9c-2a713812eed9" />
+
+
+<img width="335" height="589" alt="螢幕擷取畫面 2026-05-31 042941" src="https://github.com/user-attachments/assets/190242f3-be23-4f0a-bf9c-2a713812eed9" />
 
 <img width="449" height="534" alt="螢幕擷取畫面 2026-05-31 043133" src="https://github.com/user-attachments/assets/a475a21c-ac4c-4466-b75a-65156cd4f4f7" />
+
 
 
 **3. AI 生成的隨機地圖 (50格)**
