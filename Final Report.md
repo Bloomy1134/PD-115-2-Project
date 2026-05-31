@@ -35,29 +35,55 @@
 
 將這個因素討論進去以後，開始實作程式碼。我透過輸入自行設計的可解地圖 (先測試是否演算法導出的答案真的可以完全消除地圖上格子)，以及AI幫我生成的完全隨機地圖 (測試演算法是否能正確推論一個地圖是否不可解)進行測試，獲得以下結果與時間紀錄:
 
-1. 一個保證有解(我先行設計)；且每種顏色皆為偶數格的地圖 (50格)
-(左: DFS 版本，時間花費1秒以內 右: A* 版本，時間花費一秒以內)
+**1. 一個保證有解(我先行設計)；且每種顏色皆為偶數格的地圖 (50格)**
+**(左: DFS 版本，時間花費1秒以內 右: A-star 版本，時間花費一秒以內)**
 <img width="326" height="615" alt="螢幕擷取畫面 2026-05-31 041708" src="https://github.com/user-attachments/assets/11032995-8d8a-4c60-b3ed-257f34ce2965" />
 
 <img width="301" height="594" alt="image" src="https://github.com/user-attachments/assets/967bab18-278c-4c96-9358-f58003803acc" />
 
-2. 一個保證有解(我先行設計)；且具有三消格式的地圖 (50格)
-(左: DFS 版本，時間花費3分鐘左右 右: A* 版本，花費時間五秒左右)
+**2. 一個保證有解(我先行設計)；且具有三消格式的地圖 (50格)**
+**(左: DFS 版本，時間花費3分鐘左右 右: A-star 版本，花費時間五秒左右)**
  <img width="335" height="589" alt="螢幕擷取畫面 2026-05-31 042941" src="https://github.com/user-attachments/assets/190242f3-be23-4f0a-bf9c-2a713812eed9" />
 
 <img width="449" height="534" alt="螢幕擷取畫面 2026-05-31 043133" src="https://github.com/user-attachments/assets/a475a21c-ac4c-4466-b75a-65156cd4f4f7" />
 
 
-3. AI 生成的隨機地圖 (50格)
- 
-4. 一個地圖範圍比(2)更大的地圖 (50格；地圖 從9x7 改為 10x10)
+**3. AI 生成的隨機地圖 (50格)**
+**(地圖一；左: DFS 版本，時間花費30秒左右 右: A-star 版本，花費時間5秒左右)**
+
+<img width="714" height="162" alt="螢幕擷取畫面 2026-05-31 152338" src="https://github.com/user-attachments/assets/e3bb441e-65e2-4887-b375-fc744852c0ee" />
+
+<img width="450" height="589" alt="螢幕擷取畫面 2026-05-31 143454" src="https://github.com/user-attachments/assets/e03f24c8-8bc2-47ed-b8b7-15534d5d7bc5" />
+
+<img width="458" height="542" alt="螢幕擷取畫面 2026-05-31 150714" src="https://github.com/user-attachments/assets/b92e2513-fe66-46e1-821b-9cefdf0b9fdd" />
+
+
+
+**(地圖二；左: DFS 版本，時間花費10秒左右 右: A-star 版本，花費時間2秒左右)**
+
+<img width="1011" height="169" alt="螢幕擷取畫面 2026-05-31 152359" src="https://github.com/user-attachments/assets/e73aa003-f6b6-40fb-ba07-66c5da3e3999" />
+
+<img width="324" height="567" alt="螢幕擷取畫面 2026-05-31 145010" src="https://github.com/user-attachments/assets/827eda77-0381-4004-815c-dd7543a7a3e2" />
+
+<img width="370" height="540" alt="螢幕擷取畫面 2026-05-31 150315" src="https://github.com/user-attachments/assets/ababcb39-ed4d-47e5-ba86-fd4ed1786f94" />
+
+
+
+**(地圖三；左: DFS 版本，時間花費1分鐘左右 右: A-star版本，花費時間30秒左右)**
+
+
+<img width="1009" height="187" alt="螢幕擷取畫面 2026-05-31 152419" src="https://github.com/user-attachments/assets/566a44ac-3dec-4aeb-bca8-ad40a5205cd7" />
+
+<img width="306" height="575" alt="螢幕擷取畫面 2026-05-31 145705" src="https://github.com/user-attachments/assets/41d26fc7-919f-45a6-b299-e67cf1575c90" />
+
+<img width="326" height="587" alt="螢幕擷取畫面 2026-05-31 145943" src="https://github.com/user-attachments/assets/cd6b84e5-64c5-49fd-8753-972aabbcf2e9" />
 
 
 為何在時間花費上會有差異? 我們就兩種演算法的策略進行討論:
 1. DFS Backtracking: 在連續性步驟題型中，DFS Backtracking基本上就是盲目搜尋；持續在遇到無解情況時嘗試回溯，持續遞迴到成功抵達終點，或是所有可能性都被窮舉完畢，但仍無解。這種過程缺乏外在引導，因此在格子數越大、排序較複雜的時候，花費時間會大幅增加。
 2. A* Search: 這種演算法會開設兩個集合: Open List (未探索資訊；在專題內就是"未來可以嘗試消除方格的路線"，會將此步驟進行函式計算並與其他種步驟進行比較)，以及Closed List(儲存已經被探索的路徑狀態，以確保分析過後的步驟不再重新被考慮)。對於Open List 中列出的所有可能步驟我們會設計一個成效分數 : nextNode.f = nextNode.g + 5 x (nextNode.h) (g代表已經走了幾步，h代表至少還要再走幾步；這個成效分數以未來步驟為焦點，因此我給h加了五倍的權重；期望計算機尋找一個能盡可能減少未來步數的路線)。因為我們有為這個程式提供一個**外部的指引函數** (目標即是要讓已經走的步驟+距離終點預估值越小越好)，進入"單一個"錯誤分支時會直接進行修剪而非走到完全無解的路線 (例如；設一種顏色只剩下五格，代表需要三消，DFS一開始看到了可以兩消的其中兩格就直接行動；這樣會產生一次無用的運算路徑。但是A* Search 會保留這個可以一次消除三格，加速步驟執行的行動，正好符合正確的路徑，因此更快求出單個正確解答。)
 
-針對結果輸出步驟的差異，重點在於我為A* 設計的f(n)函式較偏好可以減少未來操作步驟數；因此可以看到A* 採用的是包含可以一次消除兩對 (四格)的路徑組合。但是DFS會直接輸出 "第一個" 他找到可以完全解的路徑，因此不僅時間花費可能更多，解題所需的步驟數也可能較多。
+針對結果輸出步驟的差異，重點在於我為A* 設計的f(n)函式較偏好可以減少未來操作步驟數；因此可以看到A* 採用的路徑會較多包含可以一次消除兩對 (四格) 的路徑組合。但是DFS會直接輸出 "第一個" 他找到可以完全解的路徑，因此不僅時間花費可能更多，解題所需的步驟數也可能較多。
 
 DFS的時間複雜度在Worst Case 是 O(n^d) (d是步驟數)，而A* Search在 f(n) 足夠優秀的情況下可以將無效分支剪除，進而大幅度壓低運算範圍。因此，在50格地圖格子分布更加複雜的情況下(三消運算更多時)，DFS和A* Search 的運算效率就已經產生了很大幅度的差距。
 
