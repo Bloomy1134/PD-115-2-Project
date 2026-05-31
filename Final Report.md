@@ -103,3 +103,239 @@ DFS的時間複雜度在Worst Case 是 O(n^d) (d是步驟數)，而A* Search在 
 這兩種演算法在實務運作上的差異，成功在本專案產生了不同的效果 (就時間複雜度而言)
 
 # 使用方式 (與程式碼部分內容的詳盡討論)
+
+使用方式: 將設計好的地圖用以下格式依序輸入:
+0 0 y (Row, Column, color)
+0 1 g
+0 2 o
+0 4 b
+0 5 r
+0 6 y
+..... (直到五十個格子輸入完畢)
+
+輸入完畢之後，系統會先跳出總格子數以及每個顏色分別的格子數。接著開始運算路徑，若有解則依序生成；若無解則生成 "No feasible answer for this map."
+
+接下來是部分程式碼核心內容的詳細註釋:
+
+**1. 在一個地圖狀態中，尋找每個可以消除任意顏色方塊的空格**
+
+vector<vector<BlockInfo>> getAllValidMoves() {
+    vector<vector<BlockInfo>> moves; // 用來儲存所有找到的合法步法
+
+    // 雙層迴圈遍歷整張地圖的每一個格子
+    for (int r = 0; r < MAX_ROW; ++r) {
+        for (int c = 0; c < MAX_COL; ++c) {
+
+            // 只有當當前格子是「空位 (0)」時，才能以此為中心向外搜尋其他格子的顏色
+            if (gameMap[r][c] == 0) {
+                // 初始化上、下、左、右四個方向第一個撞到的方塊座標，預設為 -1 表示沒撞到
+                Point p_up = { -1, -1 }, p_down = { -1, -1 }, p_left = { -1, -1 }, p_right = { -1, -1 };
+
+                // 往上搜尋第一個不是 0 的方塊
+                for (int i = r - 1; i >= 0; --i) if (gameMap[i][c] != 0) { p_up = { i, c }; break; }
+                // 往下搜尋第一個不是 0 的方塊
+                for (int i = r + 1; i < MAX_ROW; ++i) if (gameMap[i][c] != 0) { p_down = { i, c }; break; }
+                // 往左搜尋第一個不是 0 的方塊
+                for (int j = c - 1; j >= 0; --j) if (gameMap[r][j] != 0) { p_left = { r, j }; break; }
+                // 往右搜尋第一個不是 0 的方塊
+                for (int j = c + 1; j < MAX_COL; ++j) if (gameMap[r][j] != 0) { p_right = { r, j }; break; }
+
+                // 將四個方向有找到的有效方塊放進可視清單中
+                vector<Point> visible;
+                if (p_up.r != -1) visible.push_back(p_up);
+                if (p_down.r != -1) visible.push_back(p_down);
+                if (p_left.r != -1) visible.push_back(p_left);
+                if (p_right.r != -1) visible.push_back(p_right);
+
+                // 用來儲存從當前這個空位出發，所有可能產生的消除組合
+                vector<BlockInfo> currentClickMoves;
+
+                // 檢查 1 到 5 號每一種顏色
+                for (int color = 1; color <= 5; ++color) {
+                    vector<Point> colorGroup;
+                    // 在四個方向看得到的方塊中，找出屬於當前顏色的方塊
+                    for (Point p : visible) {
+                        if (gameMap[p.r][p.c] == color) {
+                            colorGroup.push_back(p);
+                        }
+                    }
+                    // 如果同一個顏色出現了 2 個或以上，代表符合消除規則
+                    if (colorGroup.size() >= 2) {
+                        for (Point p : colorGroup) {
+                            currentClickMoves.push_back({ p, color });
+                        }
+                    }
+                }
+
+                // 如果當前這個空位有合法的消除路徑，將其排序後加入currentClickMove
+                if (!currentClickMoves.empty()) {
+                    sort(currentClickMoves.begin(), currentClickMoves.end());
+                    moves.push_back(currentClickMoves);
+                }
+            }
+        }
+    }
+
+    // 將所有收集到的步奏進行排序，確保演算法不重複排同個步驟
+    sort(moves.begin(), moves.end());
+    moves.erase(unique(moves.begin(), moves.end()), moves.end());
+
+    return moves;
+}
+
+**2. DFS Backtracking 運算函式**
+
+bool dfs() {
+    if (currentblocks == 0) return true; // 盤面全清空確認有解
+
+
+    string state = "";
+    for (int r = 0; r < MAX_ROW; ++r) {
+        for (int c = 0; c < MAX_COL; ++c) {
+            state += (char)('0' + gameMap[r][c]);
+        }
+    }
+    // 如果這個盤面之前走過且確實無解，直接回溯
+    if (visitedStates.count(state)) return false;
+    visitedStates.insert(state); // 紀錄這個盤面已經來過了
+
+    // 不可解之後剪枝：若地圖上某種顏色剩餘數量剛好為 1，表示無法消除並立刻剪枝回溯
+    int colorCounts[6] = { 0 };
+    for (int r = 0; r < MAX_ROW; ++r) {
+        for (int c = 0; c < MAX_COL; ++c) {
+            colorCounts[gameMap[r][c]]++;
+        }
+    }
+    for (int i = 1; i <= 5; ++i) {
+        if (colorCounts[i] == 1) return false;
+    }
+
+    // 獲取當前盤面所有的合法操作 (即空白組合)
+    vector<vector<BlockInfo>> moves = getAllValidMoves();
+    if (moves.empty() && currentblocks > 0) return false; // 無子可動，死局回溯
+
+    for (const auto& move : moves) {
+        // 1. 執行消除
+        removeBlocks(move);
+        currentblocks -= move.size();
+
+        // 2. 遞迴搜尋
+        if (dfs()) return true;
+
+        // 3. 失敗則回溯：地圖還原狀態、退出 Stack
+        currentblocks += move.size();
+        restoreBlocks();
+    }
+    return false;
+}
+
+**3. A-star Search 函式**
+
+bool aStarSearch() {
+    // 建立Priority queue，f 值"越小"的盤面狀態會越先處理
+    priority_queue<AStarNode, vector<AStarNode>, greater<AStarNode>> pq;
+
+    // 1. 初始化起始節點
+    AStarNode startNode;
+    startNode.history = {};                   // 歷史紀錄初始化
+    startNode.currentblocks = currentblocks;   // 記錄"目前"的方塊總數
+    startNode.g = 0;                          // 起始步數為 0
+    startNode.h = currentblocks / 2;          // 起始預估值：剩餘方塊除以 2（最理想狀況下需要的步數）
+    startNode.f = startNode.g + 5 * startNode.h; // 計算總權重（加強貪婪比重，引導演算法快速找答案）
+
+    // 將全域的初始地圖複製到起始節點的棋盤中
+    for (int r = 0; r < MAX_ROW; ++r)
+        for (int c = 0; c < MAX_COL; ++c)
+            startNode.board[r][c] = gameMap[r][c];
+
+    // 將起始節點放入佇列中
+    pq.push(startNode);
+
+    // 將起始地圖狀態轉換為字串，並標記為「已造訪」，避免重複搜尋
+    string startState(MAX_ROW * MAX_COL, '0');
+    int idx = 0;
+    for (int r = 0; r < MAX_ROW; ++r)
+        for (int c = 0; c < MAX_COL; ++c)
+            startState[idx++] = '0' + gameMap[r][c];
+    visitedStates.insert(startState);
+
+    // 開始進行 A* 迴圈搜尋
+    while (!pq.empty()) {
+        // 取出當前評估最優（f 值最小）的節點
+        AStarNode curr = pq.top();
+        pq.pop();
+
+        // 【成功條件】如果地圖上已經沒有任何方塊，代表成功解出！
+        if (curr.currentblocks == 0) {
+            moveStack = curr.history; // 將過關的步驟紀錄複製給全域變數
+            return true;
+        }
+
+        // 2. 還原全域地圖
+        for (int r = 0; r < MAX_ROW; ++r)
+            for (int c = 0; c < MAX_COL; ++c)
+                gameMap[r][c] = curr.board[r][c];
+        currentblocks = curr.currentblocks;
+
+        // 3. 取得當前盤面下所有合法的消除步奏
+        vector<vector<BlockInfo>> moves = getAllValidMoves();
+
+        // 遍歷每一條可行的分支
+        for (const auto& validMove : moves) {
+            // 【模擬】在全域地圖上將選定的一組方塊消除（設為 0）
+            for (const auto& bi : validMove) {
+                gameMap[bi.p.r][bi.p.c] = 0;
+            }
+
+            // 將消除後的「新地圖」轉換為字串狀態
+            string nextState(MAX_ROW * MAX_COL, '0');
+            int sIdx = 0;
+            for (int r = 0; r < MAX_ROW; ++r) {
+                for (int c = 0; c < MAX_COL; ++c) {
+                    nextState[sIdx++] = '0' + gameMap[r][c];
+                }
+            }
+
+            if (visitedStates.count(nextState) == 0) {
+
+                //計算地圖上各個顏色的剩餘數量
+                int colorCounts[6] = { 0 };
+                for (char ch : nextState) {
+                    colorCounts[ch - '0']++;
+                }
+                bool unsolvable = false;
+                // 只要有任何一種顏色「只剩下 1 個方塊」，這個盤面就絕對無法全清了，判定無完美解
+                for (int i = 1; i <= 5; ++i) {
+                    if (colorCounts[i] == 1) { unsolvable = true; break; }
+                }
+
+                // 如果盤面依然有解，才將新節點推入 Priority Queue
+                if (!unsolvable) {
+                    visitedStates.insert(nextState); // 標記此狀態已造訪
+
+                    AStarNode nextNode;
+                    // 將模擬消除後的盤面複製給新節點
+                    for (int r = 0; r < MAX_ROW; ++r)
+                        for (int c = 0; c < MAX_COL; ++c)
+                            nextNode.board[r][c] = gameMap[r][c];
+
+                    nextNode.history = curr.history;              // nextnode繼承歷史步驟
+                    nextNode.history.push_back({ validMove });     // 加入本次步驟
+                    nextNode.currentblocks = curr.currentblocks - validMove.size(); // 更新方塊剩餘數
+                    nextNode.g = curr.g + 1;                      // 實際消耗步數 + 1
+                    nextNode.h = nextNode.currentblocks / 2;      // 計算新盤面的啟發預估值
+                    nextNode.f = nextNode.g + 5 * nextNode.h;     // 計算新盤面的總分
+
+                    pq.push(nextNode); // 推入優先佇列中等待後續搜尋
+                }
+            }
+
+            //不論該分支被放入佇列還是被剪枝，都必須還原地圖，以便測試下一個合法步法
+            for (const auto& bi : validMove) {
+                gameMap[bi.p.r][bi.p.c] = bi.color;
+            }
+        }
+    }
+    // 佇列空了卻還沒觸發 currentblocks == 0，代表此題完全無解
+    return false;
+}
