@@ -106,11 +106,17 @@ DFS的時間複雜度在Worst Case 是 O(n^d) (d是步驟數)，而A* Search在 
 
 使用方式: 將設計好的地圖用以下格式依序輸入:
 0 0 y (Row, Column, color)
+
 0 1 g
+
 0 2 o
+
 0 4 b
+
 0 5 r
+
 0 6 y
+
 ..... (直到五十個格子輸入完畢)
 
 輸入完畢之後，系統會先跳出總格子數以及每個顏色分別的格子數。接著開始運算路徑，若有解則依序生成；若無解則生成 "No feasible answer for this map."
